@@ -1,40 +1,30 @@
-# This config was automatically generated from your source code
-# Stacks detected: deps:java:.
 version: 2.1
+
 jobs:
-  test-java:
-    docker:
-      - image: cimg/openjdk:17.0
+  mend_scan:
+    macos:
+      xcode: "15.2.0"
+    restart: on-failure  # Restart the container if it exits due to an error
+    environment:
+      MAX_HEAP_SIZE: 4096m
+      HEAP_NEWSIZE: 1024m
     steps:
       - checkout
+
       - run:
-          name: Calculate cache key
-          command: |-
-            find . -name 'pom.xml' -o -name 'gradlew*' -o -name '*.gradle*' | \
-                    sort | xargs cat > /tmp/CIRCLECI_CACHE_KEY
-      - restore_cache:
-          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
+          name: Install Mend CLI
+          command: |
+            sudo curl https://downloads.mend.io/cli/darwin_arm64/mend -o /usr/local/bin/mend && sudo chmod +x /usr/local/bin/mend
+
       - run:
-          command: mvn verify
-      - store_test_results:
-          path: target/surefire-reports
-      - save_cache:
-          key: cache-{{ checksum "/tmp/CIRCLECI_CACHE_KEY" }}
-          paths:
-            - ~/.m2/repository
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
-    docker:
-      - image: cimg/base:stable
-    steps:
-      # Replace this with steps to deploy to users
-      - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+          name: Run Mend dependency scan
+          command: |
+            mend version
+            sudo mend version
+            echo "Mend scan logs:"
+            ls -l "$HOME/.mend/logs/sca"
+
 workflows:
-  build-and-test:
+  mend_scan_workflow:
     jobs:
-      - test-java
-    # - deploy:
-    #     requires:
-    #       - test-java
+      - mend_scan
