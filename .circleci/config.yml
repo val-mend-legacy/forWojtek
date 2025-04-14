@@ -4,7 +4,6 @@ jobs:
   mend_scan:
     macos:
       xcode: "15.2.0"
-    restart: on-failure  # Restart the container if it exits due to an error
     environment:
       MAX_HEAP_SIZE: 4096m
       HEAP_NEWSIZE: 1024m
